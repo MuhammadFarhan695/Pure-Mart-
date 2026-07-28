@@ -39,7 +39,7 @@ export const OrderConfirmationPage = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       {/* Top Banner Celebration */}
-      <div className="bg-gradient-to-r from-pink-100 via-pink-50 to-pink-100 rounded-3xl border border-pink-200 p-8 text-center space-y-4 shadow-sm">
+      <div className="bg-linear-to-r from-pink-100 via-pink-50 to-pink-100 rounded-3xl border border-pink-200 p-8 text-center space-y-4 shadow-sm">
         <div className="w-16 h-16 rounded-full bg-pink-600 text-white flex items-center justify-center mx-auto shadow-lg shadow-pink-200 animate-bounce">
           <CheckCircle2 className="w-8 h-8" />
         </div>

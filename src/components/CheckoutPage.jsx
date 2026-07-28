@@ -327,7 +327,7 @@ export const CheckoutPage = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-gradient-to-r from-pink-600 to-pink-500 hover:from-pink-700 hover:to-pink-600 text-white font-bold py-4 rounded-2xl text-xs uppercase tracking-widest shadow-xl shadow-pink-200 transition flex items-center justify-center space-x-2 disabled:opacity-70"
+              className="w-full bg-linear-to-r from-pink-600 to-pink-500 hover:from-pink-700 hover:to-pink-600 text-white font-bold py-4 rounded-2xl text-xs uppercase tracking-widest shadow-xl shadow-pink-200 transition flex items-center justify-center space-x-2 disabled:opacity-70"
             >
               {isSubmitting ? (
                 <span>Processing Luxury Order...</span>

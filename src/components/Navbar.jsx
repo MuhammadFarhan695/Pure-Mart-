@@ -51,7 +51,7 @@ export const Navbar = () => {
   return (
     <header className="sticky top-0 z-40 w-full transition-all duration-300">
       {/* Top Announcement Bar */}
-      <div className="bg-gradient-to-r from-pink-900 via-pink-700 to-pink-900 text-pink-50 text-xs py-2 px-4 text-center font-medium flex items-center justify-center space-x-2 shadow-inner">
+      <div className="bg-linear-to-r from-pink-900 via-pink-700 to-pink-900 text-pink-50 text-xs py-2 px-4 text-center font-medium flex items-center justify-center space-x-2 shadow-inner">
         <Sparkles className="w-3.5 h-3.5 text-pink-300 animate-pulse" />
         <span>
           Complimentary Luxury Packaging & Express Shipping on Orders Over $150 | Code:{' '}
@@ -76,7 +76,7 @@ export const Navbar = () => {
 
             {/* Brand Logo */}
             <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigateTo('home')}>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-pink-500 to-pink-300 flex items-center justify-center text-white shadow-md shadow-pink-200">
+              <div className="w-10 h-10 rounded-full bg-linear-to-tr from-pink-500 to-pink-300 flex items-center justify-center text-white shadow-md shadow-pink-200">
                 <Sparkles className="w-5 h-5" />
               </div>
               <div className="flex flex-col">

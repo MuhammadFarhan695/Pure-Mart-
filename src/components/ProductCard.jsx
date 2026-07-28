@@ -142,7 +142,7 @@ export const ProductCard = ({ product }) => {
 
           <button
             onClick={handleBuyNow}
-            className="w-full bg-gradient-to-r from-pink-600 to-pink-500 hover:from-pink-700 hover:to-pink-600 text-white py-2 px-2 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1 shadow-md shadow-pink-200 transition"
+            className="w-full bg-linear-to-r from-pink-600 to-pink-500 hover:from-pink-700 hover:to-pink-600 text-white py-2 px-2 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1 shadow-md shadow-pink-200 transition"
           >
             <Zap className="w-3.5 h-3.5" />
             <span>Buy Now</span>

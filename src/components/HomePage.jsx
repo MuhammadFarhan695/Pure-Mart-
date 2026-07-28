@@ -39,7 +39,7 @@ export const HomePage = () => {
   return (
     <div className="space-y-16 lg:space-y-24 pb-12">
       {/* HERO BANNER */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-pink-50/80 via-white to-white pt-8 pb-16 lg:py-24">
+      <section className="relative overflow-hidden bg-linear-to-b from-pink-50/80 via-white to-white pt-8 pb-16 lg:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Left Content */}
@@ -51,7 +51,7 @@ export const HomePage = () => {
 
               <h1 className="font-serif-luxury text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 leading-[1.15] tracking-tight">
                 Elevate Your Style with <br className="hidden sm:inline" />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-600 via-pink-500 to-rose-400">
+                <span className="text-transparent bg-clip-text bg-linear-to-r from-pink-600 via-pink-500 to-rose-400">
                   Bella Collection
                 </span>
               </h1>
@@ -67,7 +67,7 @@ export const HomePage = () => {
                     setSelectedCategory('All');
                     navigateTo('shop');
                   }}
-                  className="w-full sm:w-auto bg-gradient-to-r from-pink-600 to-pink-500 hover:from-pink-700 hover:to-pink-600 text-white font-semibold px-8 py-4 rounded-full shadow-lg shadow-pink-200 hover:shadow-xl hover:shadow-pink-300 transition transform hover:-translate-y-0.5 flex items-center justify-center space-x-2 text-sm tracking-wide"
+                  className="w-full sm:w-auto bg-linear-to-r from-pink-600 to-pink-500 hover:from-pink-700 hover:to-pink-600 text-white font-semibold px-8 py-4 rounded-full shadow-lg shadow-pink-200 hover:shadow-xl hover:shadow-pink-300 transition transform hover:-translate-y-0.5 flex items-center justify-center space-x-2 text-sm tracking-wide"
                 >
                   <span>Shop Now</span>
                   <ArrowRight className="w-4 h-4" />
@@ -108,7 +108,7 @@ export const HomePage = () => {
                     alt="Bella Collection Hero"
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-pink-950/60 via-transparent to-transparent"></div>
+                  <div className="absolute inset-0 bg-linear-to-t from-pink-950/60 via-transparent to-transparent"></div>
 
                   <div className="absolute bottom-6 left-6 right-6 p-4 rounded-2xl bg-white/90 backdrop-blur-md border border-white/40 shadow-xl">
                     <p className="text-xs font-bold text-pink-600 uppercase tracking-widest">
@@ -175,7 +175,7 @@ export const HomePage = () => {
                 alt={cat.name}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-pink-950/80 via-pink-950/20 to-transparent"></div>
+              <div className="absolute inset-0 bg-linear-to-t from-pink-950/80 via-pink-950/20 to-transparent"></div>
 
               <div className="absolute bottom-4 left-3 right-3 text-center text-white">
                 <h3 className="font-serif-luxury text-base font-bold tracking-wide">{cat.name}</h3>
@@ -218,7 +218,7 @@ export const HomePage = () => {
 
       {/* PROMOTIONAL BANNER */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-pink-900 via-pink-800 to-rose-950 text-white p-8 md:p-14 shadow-2xl border border-pink-700/50">
+        <div className="relative rounded-3xl overflow-hidden bg-linear-to-r from-pink-900 via-pink-800 to-rose-950 text-white p-8 md:p-14 shadow-2xl border border-pink-700/50">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center z-10 relative">
             <div className="space-y-4">
               <span className="bg-pink-500/30 text-pink-200 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-widest border border-pink-400/30">
@@ -460,7 +460,7 @@ export const HomePage = () => {
 
       {/* NEWSLETTER SUBSCRIPTION */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="rounded-3xl bg-gradient-to-r from-pink-100 via-pink-50 to-pink-100 p-8 sm:p-14 border border-pink-200 text-center relative overflow-hidden">
+        <div className="rounded-3xl bg-linear-to-r from-pink-100 via-pink-50 to-pink-100 p-8 sm:p-14 border border-pink-200 text-center relative overflow-hidden">
           <div className="max-w-xl mx-auto space-y-4 relative z-10">
             <div className="w-12 h-12 rounded-full bg-pink-600 text-white flex items-center justify-center mx-auto shadow-md shadow-pink-200">
               <Mail className="w-6 h-6" />

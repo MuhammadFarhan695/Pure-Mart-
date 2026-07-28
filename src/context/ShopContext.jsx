@@ -1,5 +1,18 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { initialProducts, initialCategories, initialOrders, validCoupons } from '../data/mockData';
+import {
+  subscribeProducts,
+  subscribeCategories,
+  subscribeOrders,
+  addProductToFirestore,
+  updateProductInFirestore,
+  deleteProductFromFirestore,
+  addCategoryToFirestore,
+  deleteCategoryFromFirestore,
+  placeOrderInFirestore,
+  updateOrderStatusInFirestore,
+  seedFirestore,
+} from '../firebase/firestoreService';
 
 const ShopContext = createContext();
 
@@ -8,23 +21,13 @@ export const ShopProvider = ({ children }) => {
   const [activePage, setActivePage] = useState('home');
   const [selectedProductId, setSelectedProductId] = useState('prod-1');
 
-  // Core Data state (stored in localStorage for persistence)
-  const [products, setProducts] = useState(() => {
-    const saved = localStorage.getItem('bella_products');
-    return saved ? JSON.parse(saved) : initialProducts;
-  });
+  // ── Firestore-backed state ──────────────────────────────────────────────────
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [firestoreReady, setFirestoreReady] = useState(false);
 
-  const [categories, setCategories] = useState(() => {
-    const saved = localStorage.getItem('bella_categories');
-    return saved ? JSON.parse(saved) : initialCategories;
-  });
-
-  const [orders, setOrders] = useState(() => {
-    const saved = localStorage.getItem('bella_orders');
-    return saved ? JSON.parse(saved) : initialOrders;
-  });
-
-  // Cart & Wishlist State
+  // ── Local-only state ───────────────────────────────────────────────────────
   const [cart, setCart] = useState(() => {
     const saved = localStorage.getItem('bella_cart');
     return saved ? JSON.parse(saved) : [
@@ -38,35 +41,30 @@ export const ShopProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : ['prod-1', 'prod-4'];
   });
 
-  // Coupon & Discount state
   const [couponCode, setCouponCode] = useState('BELLA10');
   const [discountPercent, setDiscountPercent] = useState(0.10);
   const [couponError, setCouponError] = useState('');
   const [couponSuccess, setCouponSuccess] = useState('10% Discount Code (BELLA10) Applied!');
 
-  // Quick View Modal
   const [quickViewProduct, setQuickViewProduct] = useState(null);
 
-  // Active Placed Order for Confirmation Page
   const [lastPlacedOrder, setLastPlacedOrder] = useState(() => {
     const saved = localStorage.getItem('bella_last_order');
     return saved ? JSON.parse(saved) : null;
   });
 
-  // Filter & Search states
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [priceRange, setPriceRange] = useState(300);
-  const [sortBy, setSortBy] = useState('featured'); // 'featured', 'price-low', 'price-high', 'rating', 'newest'
+  const [sortBy, setSortBy] = useState('featured');
 
-  // Admin State
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => {
     return localStorage.getItem('bella_admin_auth') === 'true';
   });
 
-  // Notification Toast state
   const [toasts, setToasts] = useState([]);
 
+  // ── Toast Helper ───────────────────────────────────────────────────────────
   const showToast = (message, type = 'success') => {
     const id = Date.now() + Math.random();
     setToasts((prev) => [...prev, { id, message, type }]);
@@ -75,44 +73,56 @@ export const ShopProvider = ({ children }) => {
     }, 3200);
   };
 
-  // Sync to localStorage
+  // ── Firestore Real-time Subscriptions ─────────────────────────────────────
   useEffect(() => {
-    localStorage.setItem('bella_products', JSON.stringify(products));
-  }, [products]);
+    let seeded = false;
 
-  useEffect(() => {
-    localStorage.setItem('bella_categories', JSON.stringify(categories));
-  }, [categories]);
+    // Subscribe to products
+    const unsubProducts = subscribeProducts((data) => {
+      if (data.length === 0 && !seeded) {
+        // Firestore is empty — seed it with mockData on first load
+        seeded = true;
+        seedFirestore(initialProducts, initialCategories, initialOrders)
+          .catch((err) => console.error('Seed error:', err));
+      } else {
+        setProducts(data);
+      }
+    });
 
-  useEffect(() => {
-    localStorage.setItem('bella_orders', JSON.stringify(orders));
-  }, [orders]);
+    // Subscribe to categories
+    const unsubCategories = subscribeCategories((data) => {
+      if (data.length > 0) setCategories(data);
+    });
 
-  useEffect(() => {
-    localStorage.setItem('bella_cart', JSON.stringify(cart));
-  }, [cart]);
+    // Subscribe to orders
+    const unsubOrders = subscribeOrders((data) => {
+      setOrders(data);
+      setFirestoreReady(true);
+    });
 
-  useEffect(() => {
-    localStorage.setItem('bella_wishlist', JSON.stringify(wishlist));
-  }, [wishlist]);
+    return () => {
+      unsubProducts();
+      unsubCategories();
+      unsubOrders();
+    };
+  }, []);
 
-  useEffect(() => {
-    localStorage.setItem('bella_admin_auth', isAdminLoggedIn ? 'true' : 'false');
-  }, [isAdminLoggedIn]);
+  // ── Persist local state to localStorage ───────────────────────────────────
+  useEffect(() => { localStorage.setItem('bella_cart', JSON.stringify(cart)); }, [cart]);
+  useEffect(() => { localStorage.setItem('bella_wishlist', JSON.stringify(wishlist)); }, [wishlist]);
+  useEffect(() => { localStorage.setItem('bella_admin_auth', isAdminLoggedIn ? 'true' : 'false'); }, [isAdminLoggedIn]);
 
-  // Page Routing Helper
+  // ── Navigation ─────────────────────────────────────────────────────────────
   const navigateTo = (page, productId = null) => {
     setActivePage(page);
-    if (productId) {
-      setSelectedProductId(productId);
-    }
+    if (productId) setSelectedProductId(productId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Cart Functions
+  // ── Cart Functions ─────────────────────────────────────────────────────────
   const addToCart = (product, quantity = 1, selectedColor = null) => {
     const color = selectedColor || (product.colors && product.colors.length > 0 ? product.colors[0].name : 'Standard');
-    const image = selectedColor && product.colors 
+    const image = selectedColor && product.colors
       ? (product.colors.find(c => c.name === selectedColor)?.image || product.images[0])
       : product.images[0];
 
@@ -120,40 +130,22 @@ export const ShopProvider = ({ children }) => {
       const existingIndex = prevCart.findIndex(
         (item) => item.id === product.id && item.selectedColor === color
       );
-
       if (existingIndex > -1) {
         const updated = [...prevCart];
         updated[existingIndex].quantity += quantity;
         return updated;
-      } else {
-        return [
-          ...prevCart,
-          {
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            originalPrice: product.originalPrice,
-            quantity: quantity,
-            selectedColor: color,
-            image: image,
-          },
-        ];
       }
+      return [...prevCart, { id: product.id, name: product.name, price: product.price, originalPrice: product.originalPrice, quantity, selectedColor: color, image }];
     });
 
     showToast(`Added "${product.name}" to your shopping bag! ✨`);
   };
 
   const updateCartQuantity = (id, color, newQuantity) => {
-    if (newQuantity <= 0) {
-      removeFromCart(id, color);
-      return;
-    }
+    if (newQuantity <= 0) { removeFromCart(id, color); return; }
     setCart((prevCart) =>
       prevCart.map((item) =>
-        item.id === id && item.selectedColor === color
-          ? { ...item, quantity: newQuantity }
-          : item
+        item.id === id && item.selectedColor === color ? { ...item, quantity: newQuantity } : item
       )
     );
   };
@@ -163,34 +155,27 @@ export const ShopProvider = ({ children }) => {
     showToast('Item removed from bag', 'info');
   };
 
-  const clearCart = () => {
-    setCart([]);
-  };
+  const clearCart = () => setCart([]);
 
-  // Wishlist Functions
+  // ── Wishlist Functions ─────────────────────────────────────────────────────
   const toggleWishlist = (productId) => {
     setWishlist((prev) => {
       const isAlreadyIn = prev.includes(productId);
       if (isAlreadyIn) {
         showToast('Removed item from your Wishlist', 'info');
         return prev.filter((id) => id !== productId);
-      } else {
-        showToast('Saved to your Wishlist! ♥️');
-        return [...prev, productId];
       }
+      showToast('Saved to your Wishlist! ♥️');
+      return [...prev, productId];
     });
   };
 
   const isInWishlist = (productId) => wishlist.includes(productId);
 
-  // Coupon apply
+  // ── Coupon ─────────────────────────────────────────────────────────────────
   const applyCoupon = (code) => {
     const cleanCode = code.trim().toUpperCase();
-    if (!cleanCode) {
-      setCouponError('Please enter a coupon code.');
-      setCouponSuccess('');
-      return;
-    }
+    if (!cleanCode) { setCouponError('Please enter a coupon code.'); setCouponSuccess(''); return; }
     if (validCoupons[cleanCode]) {
       setDiscountPercent(validCoupons[cleanCode]);
       setCouponCode(cleanCode);
@@ -203,14 +188,14 @@ export const ShopProvider = ({ children }) => {
     }
   };
 
-  // Cart Calculations
+  // ── Cart Calculations ──────────────────────────────────────────────────────
   const cartSubtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const cartDiscount = cartSubtotal * discountPercent;
   const shippingFee = cartSubtotal > 150 || cartSubtotal === 0 ? 0 : 15;
   const cartTotal = Math.max(0, cartSubtotal - cartDiscount + shippingFee);
 
-  // Place Order
-  const placeOrder = (customerDetails) => {
+  // ── Place Order (Firestore) ────────────────────────────────────────────────
+  const placeOrder = async (customerDetails) => {
     const newOrder = {
       id: `ORD-${Math.floor(10000 + Math.random() * 90000)}`,
       customerName: customerDetails.name,
@@ -225,10 +210,15 @@ export const ShopProvider = ({ children }) => {
       total: cartTotal,
       paymentMethod: customerDetails.paymentMethod || 'Cash on Delivery',
       status: 'Processing',
-      notes: customerDetails.notes || 'None'
+      notes: customerDetails.notes || 'None',
     };
 
-    setOrders((prev) => [newOrder, ...prev]);
+    try {
+      await placeOrderInFirestore(newOrder);
+    } catch (err) {
+      console.error('Failed to save order to Firestore:', err);
+    }
+
     setLastPlacedOrder(newOrder);
     localStorage.setItem('bella_last_order', JSON.stringify(newOrder));
     clearCart();
@@ -236,16 +226,15 @@ export const ShopProvider = ({ children }) => {
     showToast('Your order has been placed successfully! 🎉');
   };
 
-  // Admin Auth & Functions
+  // ── Admin Auth ─────────────────────────────────────────────────────────────
   const loginAdmin = (password) => {
     if (password === 'bella123' || password === 'admin') {
       setIsAdminLoggedIn(true);
       showToast('Admin Access Granted. Welcome back! 👑');
       return true;
-    } else {
-      showToast('Invalid Admin Credentials. Try password "admin" or "bella123"', 'error');
-      return false;
     }
+    showToast('Invalid Admin Credentials. Try password "admin" or "bella123"', 'error');
+    return false;
   };
 
   const logoutAdmin = () => {
@@ -253,116 +242,109 @@ export const ShopProvider = ({ children }) => {
     showToast('Logged out of Admin panel.', 'info');
   };
 
-  const addProduct = (newProd) => {
-    const createdProduct = {
-      id: `prod-${Date.now()}`,
-      rating: 5.0,
-      reviewCount: 0,
-      reviews: [],
-      ...newProd
-    };
-    setProducts((prev) => [createdProduct, ...prev]);
-    showToast(`Product "${createdProduct.name}" created successfully!`);
+  // ── Admin Product CRUD (Firestore) ─────────────────────────────────────────
+  const addProduct = async (newProd) => {
+    const productData = { rating: 5.0, reviewCount: 0, reviews: [], ...newProd };
+    try {
+      const firestoreId = await addProductToFirestore(productData);
+      showToast(`Product "${productData.name}" created successfully!`);
+      return firestoreId;
+    } catch (err) {
+      console.error('Failed to add product:', err);
+      showToast('Failed to add product. Check console.', 'error');
+    }
   };
 
-  const updateProduct = (updatedProd) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === updatedProd.id ? { ...p, ...updatedProd } : p))
-    );
-    showToast(`Updated product "${updatedProd.name}"`);
+  const updateProduct = async (updatedProd) => {
+    try {
+      await updateProductInFirestore(updatedProd.id, updatedProd);
+      showToast(`Updated product "${updatedProd.name}"`);
+    } catch (err) {
+      console.error('Failed to update product:', err);
+      showToast('Failed to update product.', 'error');
+    }
   };
 
-  const deleteProduct = (id) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-    showToast('Product deleted from store', 'info');
+  const deleteProduct = async (id) => {
+    try {
+      await deleteProductFromFirestore(id);
+      showToast('Product deleted from store', 'info');
+    } catch (err) {
+      console.error('Failed to delete product:', err);
+      showToast('Failed to delete product.', 'error');
+    }
   };
 
-  const addCategory = (categoryName) => {
+  // ── Admin Category CRUD (Firestore) ────────────────────────────────────────
+  const addCategory = async (categoryName) => {
     if (!categoryName) return;
     const newCat = {
-      id: `cat-${Date.now()}`,
       name: categoryName,
       icon: 'Sparkles',
       count: 0,
-      image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80'
+      image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80',
     };
-    setCategories((prev) => [...prev, newCat]);
-    showToast(`Category "${categoryName}" added!`);
+    try {
+      await addCategoryToFirestore(newCat);
+      showToast(`Category "${categoryName}" added!`);
+    } catch (err) {
+      console.error('Failed to add category:', err);
+    }
   };
 
-  const deleteCategory = (id) => {
-    setCategories((prev) => prev.filter((c) => c.id !== id));
-    showToast('Category deleted', 'info');
+  const deleteCategory = async (id) => {
+    try {
+      await deleteCategoryFromFirestore(id);
+      showToast('Category deleted', 'info');
+    } catch (err) {
+      console.error('Failed to delete category:', err);
+    }
   };
 
-  const updateOrderStatus = (orderId, newStatus) => {
-    setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
-    );
-    showToast(`Order ${orderId} status updated to ${newStatus}`);
+  // ── Admin Order Status (Firestore) ─────────────────────────────────────────
+  const updateOrderStatus = async (orderId, newStatus) => {
+    try {
+      await updateOrderStatusInFirestore(orderId, newStatus);
+      showToast(`Order ${orderId} status updated to ${newStatus}`);
+    } catch (err) {
+      console.error('Failed to update order status:', err);
+      showToast('Failed to update order status.', 'error');
+    }
   };
 
   return (
     <ShopContext.Provider
       value={{
-        activePage,
-        setActivePage,
-        selectedProductId,
-        setSelectedProductId,
+        activePage, setActivePage,
+        selectedProductId, setSelectedProductId,
         navigateTo,
 
-        products,
-        categories,
-        orders,
-        cart,
-        wishlist,
+        products, categories, orders,
+        firestoreReady,
 
-        addToCart,
-        updateCartQuantity,
-        removeFromCart,
-        clearCart,
+        cart, wishlist,
+        addToCart, updateCartQuantity, removeFromCart, clearCart,
+        toggleWishlist, isInWishlist,
 
-        toggleWishlist,
-        isInWishlist,
+        couponCode, discountPercent, couponError, couponSuccess, applyCoupon,
 
-        couponCode,
-        discountPercent,
-        couponError,
-        couponSuccess,
-        applyCoupon,
+        cartSubtotal, cartDiscount, shippingFee, cartTotal,
 
-        cartSubtotal,
-        cartDiscount,
-        shippingFee,
-        cartTotal,
+        quickViewProduct, setQuickViewProduct,
 
-        quickViewProduct,
-        setQuickViewProduct,
+        lastPlacedOrder, placeOrder,
 
-        lastPlacedOrder,
-        placeOrder,
+        searchQuery, setSearchQuery,
+        selectedCategory, setSelectedCategory,
+        priceRange, setPriceRange,
+        sortBy, setSortBy,
 
-        searchQuery,
-        setSearchQuery,
-        selectedCategory,
-        setSelectedCategory,
-        priceRange,
-        setPriceRange,
-        sortBy,
-        setSortBy,
-
-        isAdminLoggedIn,
-        loginAdmin,
-        logoutAdmin,
-        addProduct,
-        updateProduct,
-        deleteProduct,
-        addCategory,
-        deleteCategory,
+        isAdminLoggedIn, loginAdmin, logoutAdmin,
+        addProduct, updateProduct, deleteProduct,
+        addCategory, deleteCategory,
         updateOrderStatus,
 
-        toasts,
-        showToast
+        toasts, showToast,
       }}
     >
       {children}
@@ -372,8 +354,6 @@ export const ShopProvider = ({ children }) => {
 
 export const useShop = () => {
   const context = useContext(ShopContext);
-  if (!context) {
-    throw new Error('useShop must be used within a ShopProvider');
-  }
+  if (!context) throw new Error('useShop must be used within a ShopProvider');
   return context;
 };

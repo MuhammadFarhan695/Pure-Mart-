@@ -41,7 +41,7 @@ export const Footer = () => {
           {/* Brand Col */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigateTo('home')}>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-pink-500 to-pink-300 flex items-center justify-center text-white shadow-md">
+              <div className="w-10 h-10 rounded-full bg-linear-to-tr from-pink-500 to-pink-300 flex items-center justify-center text-white shadow-md">
                 <Sparkles className="w-5 h-5" />
               </div>
               <div className="flex flex-col">

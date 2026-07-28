@@ -229,7 +229,7 @@ export const ProductDetailsPage = () => {
               </button>
               <button
                 onClick={handleBuyNow}
-                className="w-full bg-gradient-to-r from-pink-600 to-pink-500 hover:from-pink-700 hover:to-pink-600 text-white py-4 rounded-2xl font-bold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-pink-200 transition"
+                className="w-full bg-linear-to-r from-pink-600 to-pink-500 hover:from-pink-700 hover:to-pink-600 text-white py-4 rounded-2xl font-bold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-pink-200 transition"
               >
                 <Zap className="w-4 h-4" />
                 <span>Buy Now</span>

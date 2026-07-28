@@ -96,7 +96,7 @@ export const CartPage = () => {
         </div>
         <div className="w-full h-2.5 bg-pink-200/60 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-pink-500 to-rose-400 rounded-full transition-all duration-500"
+            className="h-full bg-linear-to-r from-pink-500 to-rose-400 rounded-full transition-all duration-500"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
@@ -271,7 +271,7 @@ export const CartPage = () => {
 
             <button
               onClick={() => navigateTo('checkout')}
-              className="w-full bg-gradient-to-r from-pink-600 to-pink-500 hover:from-pink-700 hover:to-pink-600 text-white font-bold py-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-pink-200 transition flex items-center justify-center space-x-2"
+              className="w-full bg-linear-to-r from-pink-600 to-pink-500 hover:from-pink-700 hover:to-pink-600 text-white font-bold py-4 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-pink-200 transition flex items-center justify-center space-x-2"
             >
               <span>Proceed to Checkout</span>
               <ArrowRight className="w-4 h-4" />
