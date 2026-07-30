@@ -1,44 +1,47 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { initialProducts, initialCategories, initialOrders, validCoupons } from '../data/mockData';
 import {
-  subscribeProducts,
-  subscribeCategories,
-  subscribeOrders,
-  addProductToFirestore,
-  updateProductInFirestore,
-  deleteProductFromFirestore,
-  addCategoryToFirestore,
-  deleteCategoryFromFirestore,
-  placeOrderInFirestore,
-  updateOrderStatusInFirestore,
-  seedFirestore,
-} from '../firebase/firestoreService';
+  apiFetchProducts,
+  apiFetchCategories,
+  apiFetchOrders,
+  apiAddProduct,
+  apiUpdateProduct,
+  apiDeleteProduct,
+  apiAddCategory,
+  apiDeleteCategory,
+  apiPlaceOrder,
+  apiUpdateOrderStatus,
+  apiAdminLogin,
+  apiLogout,
+  apiSendContactMessage,
+  apiValidateCoupon,
+} from '../api/apiService';
 
 const ShopContext = createContext();
 
 export const ShopProvider = ({ children }) => {
   // Navigation & View state
   const [activePage, setActivePage] = useState('home');
-  const [selectedProductId, setSelectedProductId] = useState('prod-1');
+  const [selectedProductId, setSelectedProductId] = useState(null);
 
-  // ── Firestore-backed state ──────────────────────────────────────────────────
+  // ── Backend-backed state ──────────────────────────────────────────────
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [orders, setOrders] = useState([]);
   const [firestoreReady, setFirestoreReady] = useState(false);
 
-  // ── Local-only state ───────────────────────────────────────────────────────
+  // ── Local-only state ───────────────────────────────────────────────────
   const [cart, setCart] = useState(() => {
     const saved = localStorage.getItem('bella_cart');
     return saved ? JSON.parse(saved) : [
-      { id: 'prod-1', name: 'Bella Rose Quilted Crossbody Bag', price: 129, originalPrice: 189, quantity: 1, selectedColor: 'Dusty Rose', image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80' },
-      { id: 'prod-2', name: 'Aura 18K Gold Pearl Drop Earrings', price: 79, originalPrice: 110, quantity: 1, selectedColor: 'Pearl Gold', image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80' }
+      { id: 1, name: 'Bella Rose Quilted Crossbody Bag', price: 129, originalPrice: 189, quantity: 1, selectedColor: 'Dusty Rose', image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80' },
+      { id: 2, name: 'Aura 18K Gold Pearl Drop Earrings', price: 79, originalPrice: 110, quantity: 1, selectedColor: 'Pearl Gold', image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80' }
     ];
   });
 
   const [wishlist, setWishlist] = useState(() => {
     const saved = localStorage.getItem('bella_wishlist');
-    return saved ? JSON.parse(saved) : ['prod-1', 'prod-4'];
+    return saved ? JSON.parse(saved) : [1, 4];
   });
 
   const [couponCode, setCouponCode] = useState('BELLA10');
@@ -64,7 +67,7 @@ export const ShopProvider = ({ children }) => {
 
   const [toasts, setToasts] = useState([]);
 
-  // ── Toast Helper ───────────────────────────────────────────────────────────
+  // ── Toast Helper ───────────────────────────────────────────────────────
   const showToast = (message, type = 'success') => {
     const id = Date.now() + Math.random();
     setToasts((prev) => [...prev, { id, message, type }]);
@@ -73,53 +76,76 @@ export const ShopProvider = ({ children }) => {
     }, 3200);
   };
 
-  // ── Firestore Real-time Subscriptions ─────────────────────────────────────
-  useEffect(() => {
-    let seeded = false;
-
-    // Subscribe to products
-    const unsubProducts = subscribeProducts((data) => {
-      if (data.length === 0 && !seeded) {
-        // Firestore is empty — seed it with mockData on first load
-        seeded = true;
-        seedFirestore(initialProducts, initialCategories, initialOrders)
-          .catch((err) => console.error('Seed error:', err));
+  // ── Fetch Data from Backend API ─────────────────────────────────────
+  const fetchAllData = useCallback(async () => {
+    try {
+      // Fetch products
+      const productsRes = await apiFetchProducts({ limit: 100 });
+      if (productsRes.success && productsRes.data.length > 0) {
+        setProducts(productsRes.data);
+        // Set initial selectedProductId if not set
+        if (!selectedProductId && productsRes.data.length > 0) {
+          setSelectedProductId(productsRes.data[0].id);
+        }
       } else {
-        setProducts(data);
+        // Fallback to mock data if backend is empty or unreachable
+        setProducts(initialProducts);
+        if (!selectedProductId) setSelectedProductId('prod-1');
       }
-    });
+    } catch {
+      // Backend unreachable — use mock data as fallback
+      console.warn('⚠️ Backend unreachable, using local mock data for products');
+      setProducts(initialProducts);
+      if (!selectedProductId) setSelectedProductId('prod-1');
+    }
 
-    // Subscribe to categories
-    const unsubCategories = subscribeCategories((data) => {
-      if (data.length > 0) setCategories(data);
-    });
+    try {
+      const categoriesRes = await apiFetchCategories();
+      if (categoriesRes.success && categoriesRes.data.length > 0) {
+        setCategories(categoriesRes.data);
+      } else {
+        setCategories(initialCategories);
+      }
+    } catch {
+      console.warn('⚠️ Backend unreachable, using local mock data for categories');
+      setCategories(initialCategories);
+    }
 
-    // Subscribe to orders
-    const unsubOrders = subscribeOrders((data) => {
-      setOrders(data);
-      setFirestoreReady(true);
-    });
+    try {
+      // Orders require admin auth — only fetch if admin is logged in
+      if (isAdminLoggedIn && localStorage.getItem('bella_auth_token')) {
+        const ordersRes = await apiFetchOrders();
+        if (ordersRes.success) {
+          setOrders(ordersRes.data);
+        }
+      } else {
+        setOrders(initialOrders);
+      }
+    } catch {
+      console.warn('⚠️ Backend unreachable, using local mock data for orders');
+      setOrders(initialOrders);
+    }
 
-    return () => {
-      unsubProducts();
-      unsubCategories();
-      unsubOrders();
-    };
-  }, []);
+    setFirestoreReady(true);
+  }, [isAdminLoggedIn, selectedProductId]);
 
-  // ── Persist local state to localStorage ───────────────────────────────────
+  useEffect(() => {
+    fetchAllData();
+  }, [fetchAllData]);
+
+  // ── Persist local state to localStorage ───────────────────────────────
   useEffect(() => { localStorage.setItem('bella_cart', JSON.stringify(cart)); }, [cart]);
   useEffect(() => { localStorage.setItem('bella_wishlist', JSON.stringify(wishlist)); }, [wishlist]);
   useEffect(() => { localStorage.setItem('bella_admin_auth', isAdminLoggedIn ? 'true' : 'false'); }, [isAdminLoggedIn]);
 
-  // ── Navigation ─────────────────────────────────────────────────────────────
+  // ── Navigation ─────────────────────────────────────────────────────────
   const navigateTo = (page, productId = null) => {
     setActivePage(page);
     if (productId) setSelectedProductId(productId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // ── Cart Functions ─────────────────────────────────────────────────────────
+  // ── Cart Functions ─────────────────────────────────────────────────────
   const addToCart = (product, quantity = 1, selectedColor = null) => {
     const color = selectedColor || (product.colors && product.colors.length > 0 ? product.colors[0].name : 'Standard');
     const image = selectedColor && product.colors
@@ -157,7 +183,7 @@ export const ShopProvider = ({ children }) => {
 
   const clearCart = () => setCart([]);
 
-  // ── Wishlist Functions ─────────────────────────────────────────────────────
+  // ── Wishlist Functions ─────────────────────────────────────────────────
   const toggleWishlist = (productId) => {
     setWishlist((prev) => {
       const isAlreadyIn = prev.includes(productId);
@@ -172,10 +198,26 @@ export const ShopProvider = ({ children }) => {
 
   const isInWishlist = (productId) => wishlist.includes(productId);
 
-  // ── Coupon ─────────────────────────────────────────────────────────────────
-  const applyCoupon = (code) => {
+  // ── Coupon ─────────────────────────────────────────────────────────────
+  const applyCoupon = async (code) => {
     const cleanCode = code.trim().toUpperCase();
     if (!cleanCode) { setCouponError('Please enter a coupon code.'); setCouponSuccess(''); return; }
+
+    try {
+      const res = await apiValidateCoupon(cleanCode);
+      if (res.success) {
+        setDiscountPercent(res.data.discountPercent);
+        setCouponCode(res.data.code);
+        setCouponSuccess(res.message);
+        setCouponError('');
+        showToast(`Coupon applied! You saved ${res.data.discountPercent * 100}%! 🎉`);
+        return;
+      }
+    } catch {
+      // Fallback to local validation
+    }
+
+    // Local fallback
     if (validCoupons[cleanCode]) {
       setDiscountPercent(validCoupons[cleanCode]);
       setCouponCode(cleanCode);
@@ -188,13 +230,13 @@ export const ShopProvider = ({ children }) => {
     }
   };
 
-  // ── Cart Calculations ──────────────────────────────────────────────────────
+  // ── Cart Calculations ──────────────────────────────────────────────────
   const cartSubtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const cartDiscount = cartSubtotal * discountPercent;
   const shippingFee = cartSubtotal > 150 || cartSubtotal === 0 ? 0 : 15;
   const cartTotal = Math.max(0, cartSubtotal - cartDiscount + shippingFee);
 
-  // ── Place Order (Firestore) ────────────────────────────────────────────────
+  // ── Place Order (Backend API) ──────────────────────────────────────────
   const placeOrder = async (customerDetails) => {
     const newOrder = {
       id: `ORD-${Math.floor(10000 + Math.random() * 90000)}`,
@@ -214,9 +256,9 @@ export const ShopProvider = ({ children }) => {
     };
 
     try {
-      await placeOrderInFirestore(newOrder);
+      await apiPlaceOrder(newOrder);
     } catch (err) {
-      console.error('Failed to save order to Firestore:', err);
+      console.error('Failed to save order to backend:', err);
     }
 
     setLastPlacedOrder(newOrder);
@@ -226,8 +268,22 @@ export const ShopProvider = ({ children }) => {
     showToast('Your order has been placed successfully! 🎉');
   };
 
-  // ── Admin Auth ─────────────────────────────────────────────────────────────
-  const loginAdmin = (password) => {
+  // ── Admin Auth ─────────────────────────────────────────────────────────
+  const loginAdmin = async (password) => {
+    try {
+      const res = await apiAdminLogin(password);
+      if (res.success) {
+        setIsAdminLoggedIn(true);
+        showToast('Admin Access Granted. Welcome back! 👑');
+        // Refresh data to get orders
+        fetchAllData();
+        return true;
+      }
+    } catch {
+      // Fallback to local validation
+    }
+
+    // Local fallback for offline mode
     if (password === 'bella123' || password === 'admin') {
       setIsAdminLoggedIn(true);
       showToast('Admin Access Granted. Welcome back! 👑');
@@ -239,16 +295,20 @@ export const ShopProvider = ({ children }) => {
 
   const logoutAdmin = () => {
     setIsAdminLoggedIn(false);
+    apiLogout();
     showToast('Logged out of Admin panel.', 'info');
   };
 
-  // ── Admin Product CRUD (Firestore) ─────────────────────────────────────────
+  // ── Admin Product CRUD (Backend API) ───────────────────────────────────
   const addProduct = async (newProd) => {
     const productData = { rating: 5.0, reviewCount: 0, reviews: [], ...newProd };
     try {
-      const firestoreId = await addProductToFirestore(productData);
-      showToast(`Product "${productData.name}" created successfully!`);
-      return firestoreId;
+      const res = await apiAddProduct(productData);
+      if (res.success) {
+        showToast(`Product "${productData.name}" created successfully!`);
+        fetchAllData(); // Refresh products list
+        return res.data.id;
+      }
     } catch (err) {
       console.error('Failed to add product:', err);
       showToast('Failed to add product. Check console.', 'error');
@@ -257,8 +317,11 @@ export const ShopProvider = ({ children }) => {
 
   const updateProduct = async (updatedProd) => {
     try {
-      await updateProductInFirestore(updatedProd.id, updatedProd);
-      showToast(`Updated product "${updatedProd.name}"`);
+      const res = await apiUpdateProduct(updatedProd.id, updatedProd);
+      if (res.success) {
+        showToast(`Updated product "${updatedProd.name}"`);
+        fetchAllData();
+      }
     } catch (err) {
       console.error('Failed to update product:', err);
       showToast('Failed to update product.', 'error');
@@ -267,15 +330,18 @@ export const ShopProvider = ({ children }) => {
 
   const deleteProduct = async (id) => {
     try {
-      await deleteProductFromFirestore(id);
-      showToast('Product deleted from store', 'info');
+      const res = await apiDeleteProduct(id);
+      if (res.success) {
+        showToast('Product deleted from store', 'info');
+        fetchAllData();
+      }
     } catch (err) {
       console.error('Failed to delete product:', err);
       showToast('Failed to delete product.', 'error');
     }
   };
 
-  // ── Admin Category CRUD (Firestore) ────────────────────────────────────────
+  // ── Admin Category CRUD (Backend API) ──────────────────────────────────
   const addCategory = async (categoryName) => {
     if (!categoryName) return;
     const newCat = {
@@ -285,8 +351,9 @@ export const ShopProvider = ({ children }) => {
       image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80',
     };
     try {
-      await addCategoryToFirestore(newCat);
+      await apiAddCategory(newCat);
       showToast(`Category "${categoryName}" added!`);
+      fetchAllData();
     } catch (err) {
       console.error('Failed to add category:', err);
     }
@@ -294,18 +361,20 @@ export const ShopProvider = ({ children }) => {
 
   const deleteCategory = async (id) => {
     try {
-      await deleteCategoryFromFirestore(id);
+      await apiDeleteCategory(id);
       showToast('Category deleted', 'info');
+      fetchAllData();
     } catch (err) {
       console.error('Failed to delete category:', err);
     }
   };
 
-  // ── Admin Order Status (Firestore) ─────────────────────────────────────────
+  // ── Admin Order Status (Backend API) ───────────────────────────────────
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      await updateOrderStatusInFirestore(orderId, newStatus);
+      await apiUpdateOrderStatus(orderId, newStatus);
       showToast(`Order ${orderId} status updated to ${newStatus}`);
+      fetchAllData();
     } catch (err) {
       console.error('Failed to update order status:', err);
       showToast('Failed to update order status.', 'error');
