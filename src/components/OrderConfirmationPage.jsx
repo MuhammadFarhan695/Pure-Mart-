@@ -152,7 +152,7 @@ export const OrderConfirmationPage = () => {
                 </div>
               </div>
               <span className="font-bold text-slate-900">
-                ${(item.price * item.quantity).toFixed(2)}
+                PKR {(item.price * item.quantity).toFixed(2)}
               </span>
             </div>
           ))}
@@ -162,24 +162,24 @@ export const OrderConfirmationPage = () => {
         <div className="space-y-2 text-xs text-slate-600 max-w-xs ml-auto pt-2">
           <div className="flex justify-between">
             <span>Subtotal</span>
-            <span className="font-bold text-slate-800">${lastPlacedOrder.subtotal.toFixed(2)}</span>
+            <span className="font-bold text-slate-800">PKR {lastPlacedOrder.subtotal.toFixed(2)}</span>
           </div>
           {lastPlacedOrder.discount > 0 && (
             <div className="flex justify-between text-emerald-600 font-semibold">
               <span>Discount</span>
-              <span>-${lastPlacedOrder.discount.toFixed(2)}</span>
+              <span>-PKR {lastPlacedOrder.discount.toFixed(2)}</span>
             </div>
           )}
           <div className="flex justify-between">
             <span>Shipping</span>
             <span className="font-bold text-slate-800">
-              {lastPlacedOrder.shipping === 0 ? 'FREE' : `$${lastPlacedOrder.shipping.toFixed(2)}`}
+              {lastPlacedOrder.shipping === 0 ? 'FREE' : `PKR ${lastPlacedOrder.shipping.toFixed(2)}`}
             </span>
           </div>
           <div className="border-t border-slate-200 pt-2 flex justify-between text-base font-bold text-slate-900">
             <span>Total Paid</span>
             <span className="text-pink-600 text-xl font-extrabold">
-              ${lastPlacedOrder.total.toFixed(2)}
+              PKR {lastPlacedOrder.total.toFixed(2)}
             </span>
           </div>
         </div>

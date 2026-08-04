@@ -52,7 +52,7 @@ export const ShopPage = () => {
   const resetFilters = () => {
     setSelectedCategory('All');
     setSearchQuery('');
-    setPriceRange(300);
+    setPriceRange(20000);
     setSortBy('featured');
   };
 
@@ -66,7 +66,7 @@ export const ShopPage = () => {
           <span className="font-semibold text-slate-900">Shop Collection</span>
         </div>
         <h1 className="font-serif-luxury text-3xl sm:text-4xl font-bold text-slate-900">
-          The Bella Collection
+          Pure Mart Collection
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 mt-1">
           Explore luxury accessories, designer handbags, handcrafted jewelry, and fine fragrance.
@@ -149,20 +149,20 @@ export const ShopPage = () => {
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-bold uppercase text-slate-700">Max Price</label>
-              <span className="text-xs font-bold text-pink-600">${priceRange}</span>
+              <span className="text-xs font-bold text-pink-600">PKR {priceRange.toLocaleString()}</span>
             </div>
             <input
               type="range"
-              min="30"
-              max="300"
-              step="10"
+              min="1000"
+              max="20000"
+              step="500"
               value={priceRange}
               onChange={(e) => setPriceRange(Number(e.target.value))}
               className="w-full accent-pink-600 cursor-pointer"
             />
             <div className="flex justify-between text-[10px] text-slate-400 font-semibold mt-1">
-              <span>$30</span>
-              <span>$300</span>
+              <span>PKR 1,000</span>
+              <span>PKR 20,000</span>
             </div>
           </div>
         </div>
@@ -207,7 +207,7 @@ export const ShopPage = () => {
                 No matching products found
               </h3>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Try adjusting your search criteria or reset filters to browse the entire Bella Collection.
+                Try adjusting your search criteria or reset filters to browse the entire Pure Mart Collection.
               </p>
               <button
                 onClick={resetFilters}

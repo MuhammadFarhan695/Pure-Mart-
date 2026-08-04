@@ -20,7 +20,7 @@ import {
 import { instagramPosts, reviewsList } from '../data/mockData';
 
 export const HomePage = () => {
-  const { products, categories, navigateTo, setSelectedCategory, showToast } = useShop();
+  const { products, categories, navigateTo, setSelectedCategory, showToast, siteSettings } = useShop();
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
 
@@ -52,7 +52,7 @@ export const HomePage = () => {
               <h1 className="font-serif-luxury text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 leading-[1.15] tracking-tight">
                 Elevate Your Style with <br className="hidden sm:inline" />
                 <span className="text-transparent bg-clip-text bg-linear-to-r from-pink-600 via-pink-500 to-rose-400">
-                  Bella Collection
+                  {siteSettings.websiteName}
                 </span>
               </h1>
 
@@ -115,10 +115,10 @@ export const HomePage = () => {
                       Featured Design
                     </p>
                     <p className="font-serif-luxury text-lg font-bold text-slate-900">
-                      Bella Rose Quilted Crossbody
+                      {siteSettings.websiteName} Quilted Crossbody
                     </p>
                     <div className="flex items-center justify-between mt-1">
-                      <span className="text-sm font-bold text-pink-700">$129.00</span>
+                      <span className="text-sm font-bold text-pink-700">PKR 129</span>
                       <button
                         onClick={() => navigateTo('product-details', 'prod-1')}
                         className="text-xs font-semibold text-slate-800 hover:text-pink-600 flex items-center space-x-1"
@@ -316,7 +316,7 @@ export const HomePage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <span className="text-pink-600 text-xs font-bold uppercase tracking-widest">
-              The Bella Promise
+              The {siteSettings.websiteName} Promise
             </span>
             <h2 className="font-serif-luxury text-3xl font-bold text-slate-900 mt-1">
               Why Choose Us
@@ -347,7 +347,7 @@ export const HomePage = () => {
                 Free Express Shipping
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Complimentary 2-day express shipping on all domestic orders over $150.
+                Complimentary 2-day express shipping on all domestic orders over PKR 150.
               </p>
             </div>
 
@@ -430,7 +430,7 @@ export const HomePage = () => {
         <div className="text-center max-w-2xl mx-auto mb-8">
           <div className="inline-flex items-center space-x-2 text-pink-600 text-xs font-bold uppercase tracking-widest mb-1">
             <Camera className="w-4 h-4" />
-            <span>@bellastore_official</span>
+            <span>@{siteSettings.websiteName.replace(/\s+/g, '').toLowerCase()}_official</span>
           </div>
           <h2 className="font-serif-luxury text-3xl font-bold text-slate-900">
             Follow Us On Instagram
@@ -469,7 +469,7 @@ export const HomePage = () => {
               Unlock 15% OFF Your First Purchase
             </h2>
             <p className="text-slate-600 text-xs sm:text-sm">
-              Subscribe to the Bella Newsletter to receive VIP early access to new arrivals, luxury lookbooks, and exclusive secret sales.
+              Subscribe to the {siteSettings.websiteName} Newsletter to receive VIP early access to new arrivals, luxury lookbooks, and exclusive secret sales.
             </p>
 
             {newsletterSubscribed ? (

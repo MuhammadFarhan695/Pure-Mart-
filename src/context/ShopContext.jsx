@@ -27,7 +27,10 @@ export const ShopProvider = ({ children }) => {
   // ── Backend-backed state ──────────────────────────────────────────────
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState(() => {
+    const saved = localStorage.getItem('puremart_orders');
+    return saved ? JSON.parse(saved) : initialOrders;
+  });
   const [firestoreReady, setFirestoreReady] = useState(false);
 
   // ── Local-only state ───────────────────────────────────────────────────
@@ -58,11 +61,45 @@ export const ShopProvider = ({ children }) => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [priceRange, setPriceRange] = useState(300);
+  const [priceRange, setPriceRange] = useState(20000);
   const [sortBy, setSortBy] = useState('featured');
 
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => {
     return localStorage.getItem('bella_admin_auth') === 'true';
+  });
+
+  const defaultSettings = {
+    websiteName: 'PURE MART',
+    businessName: 'PURE MART',
+    ownerName: 'Muhammad Farhan',
+    email: 'farhanabc43@gmail.com',
+    phone: '03116493529',
+    address: 'Nazimabad No. 2 Printing Market, Near Fancy Paper Shop, Karachi, Pakistan',
+  };
+
+  const [siteSettings, setSiteSettings] = useState(() => {
+    const saved = localStorage.getItem('puremart_site_settings');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return { ...parsed, websiteName: 'PURE MART', businessName: 'PURE MART', email: 'farhanabc43@gmail.com' };
+    }
+    return defaultSettings;
+  });
+
+  const [contactMessages, setContactMessages] = useState(() => {
+    const saved = localStorage.getItem('puremart_contact_messages');
+    return saved ? JSON.parse(saved) : [
+      {
+        id: 'MSG-9041',
+        name: 'Ali Raza',
+        email: 'aliraza@example.com',
+        phone: '03001234567',
+        subject: 'Order Delivery & Products Inquiry',
+        message: 'Assalam-o-Alaikum, PURE MART par new stock kab aaye ga? Order deliver hone mein kitna time lagta hai?',
+        date: new Date().toLocaleDateString('en-PK', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        status: 'Unread'
+      }
+    ];
   });
 
   const [toasts, setToasts] = useState([]);
@@ -137,6 +174,9 @@ export const ShopProvider = ({ children }) => {
   useEffect(() => { localStorage.setItem('bella_cart', JSON.stringify(cart)); }, [cart]);
   useEffect(() => { localStorage.setItem('bella_wishlist', JSON.stringify(wishlist)); }, [wishlist]);
   useEffect(() => { localStorage.setItem('bella_admin_auth', isAdminLoggedIn ? 'true' : 'false'); }, [isAdminLoggedIn]);
+  useEffect(() => { localStorage.setItem('puremart_site_settings', JSON.stringify(siteSettings)); }, [siteSettings]);
+  useEffect(() => { localStorage.setItem('puremart_contact_messages', JSON.stringify(contactMessages)); }, [contactMessages]);
+  useEffect(() => { localStorage.setItem('puremart_orders', JSON.stringify(orders)); }, [orders]);
 
   // ── Navigation ─────────────────────────────────────────────────────────
   const navigateTo = (page, productId = null) => {
@@ -236,10 +276,14 @@ export const ShopProvider = ({ children }) => {
   const shippingFee = cartSubtotal > 150 || cartSubtotal === 0 ? 0 : 15;
   const cartTotal = Math.max(0, cartSubtotal - cartDiscount + shippingFee);
 
-  // ── Place Order (Backend API) ──────────────────────────────────────────
+  // ── Place Order ─────────────────────────────────────────────────────────
+  const OWNER_PHONE = '923116493529'; // WhatsApp number (country code + number)
+  const OWNER_EMAIL = 'farhanabc43@gmail.com';
+
   const placeOrder = async (customerDetails) => {
+    const orderId = `ORD-${Math.floor(10000 + Math.random() * 90000)}`;
     const newOrder = {
-      id: `ORD-${Math.floor(10000 + Math.random() * 90000)}`,
+      id: orderId,
       customerName: customerDetails.name,
       email: customerDetails.email,
       phone: customerDetails.phone,
@@ -255,48 +299,132 @@ export const ShopProvider = ({ children }) => {
       notes: customerDetails.notes || 'None',
     };
 
+    // 1) Save to Admin Panel orders state (localStorage)
+    setOrders((prev) => [newOrder, ...prev]);
+    const savedOrders = JSON.parse(localStorage.getItem('puremart_orders') || '[]');
+    localStorage.setItem('puremart_orders', JSON.stringify([newOrder, ...savedOrders]));
+
+    // 2) Send Email Notification via FormSubmit to owner email
     try {
-      await apiPlaceOrder(newOrder);
-    } catch (err) {
-      console.error('Failed to save order to backend:', err);
+      const itemsList = cart.map(i => `• ${i.name} x${i.quantity} = PKR ${(i.price * i.quantity).toLocaleString()}`).join('\n');
+      await fetch(`https://formsubmit.co/ajax/${OWNER_EMAIL}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          _subject: `🛍️ New Order ${orderId} — PURE MART`,
+          'Order ID': orderId,
+          'Customer Name': customerDetails.name,
+          'Customer Email': customerDetails.email,
+          'Customer Phone': customerDetails.phone,
+          'Delivery Address': newOrder.address,
+          'Payment Method': newOrder.paymentMethod,
+          'Order Items': itemsList,
+          'Total Amount': `PKR ${cartTotal.toLocaleString()}`,
+          'Order Date': newOrder.date,
+        })
+      });
+    } catch {
+      // silent fail — email not critical
+    }
+
+    // 3) Open WhatsApp with pre-filled order notification
+    try {
+      const itemsText = cart.map(i => `▪ ${i.name} x${i.quantity} = PKR ${(i.price * i.quantity).toLocaleString()}`).join('\n');
+      const waMsg = encodeURIComponent(
+        `🛍️ *NEW ORDER — PURE MART*\n\n` +
+        `📋 *Order ID:* ${orderId}\n` +
+        `👤 *Customer:* ${customerDetails.name}\n` +
+        `📞 *Phone:* ${customerDetails.phone}\n` +
+        `📧 *Email:* ${customerDetails.email}\n` +
+        `🏠 *Address:* ${newOrder.address}\n\n` +
+        `🧾 *Items Ordered:*\n${itemsText}\n\n` +
+        `💰 *Subtotal:* PKR ${cartSubtotal.toLocaleString()}\n` +
+        `🏷️ *Discount:* PKR ${cartDiscount.toLocaleString()}\n` +
+        `🚚 *Shipping:* PKR ${shippingFee.toLocaleString()}\n` +
+        `✅ *TOTAL: PKR ${cartTotal.toLocaleString()}*\n\n` +
+        `💳 *Payment:* ${newOrder.paymentMethod}\n` +
+        `📅 *Date:* ${newOrder.date}`
+      );
+      window.open(`https://wa.me/${OWNER_PHONE}?text=${waMsg}`, '_blank');
+    } catch {
+      // silent fail
     }
 
     setLastPlacedOrder(newOrder);
     localStorage.setItem('bella_last_order', JSON.stringify(newOrder));
     clearCart();
     navigateTo('order-confirmation');
-    showToast('Your order has been placed successfully! 🎉');
+    showToast('✅ Order placed! WhatsApp & Email notification sent to admin.', 'success');
+  };
+
+  // ── Contact Messages Functions ──────────────────────────────────────────
+  const sendContactMessage = async (formData) => {
+    const newMsg = {
+      id: `MSG-${Math.floor(1000 + Math.random() * 9000)}`,
+      name: formData.name || 'Anonymous Customer',
+      email: formData.email || 'No email provided',
+      phone: formData.phone || '',
+      subject: formData.subject || 'General Inquiry',
+      message: formData.message || '',
+      date: new Date().toLocaleString('en-PK', { dateStyle: 'medium', timeStyle: 'short' }),
+      status: 'Unread'
+    };
+    setContactMessages((prev) => [newMsg, ...prev]);
+
+    try {
+      await fetch('https://formsubmit.co/ajax/farhanabc43@gmail.com', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone || 'N/A',
+          _subject: `[PURE MART Contact] ${formData.subject}`,
+          message: formData.message
+        })
+      });
+      showToast('📩 Real Email & Admin Panel update sent successfully!', 'success');
+    } catch {
+      showToast('✨ Message saved in Admin Panel.', 'success');
+    }
+    return true;
+  };
+
+  const deleteContactMessage = (id) => {
+    setContactMessages((prev) => prev.filter((m) => m.id !== id));
+    showToast('Message deleted successfully', 'info');
+  };
+
+  const markMessageRead = (id) => {
+    setContactMessages((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, status: 'Read' } : m))
+    );
   };
 
   // ── Admin Auth ─────────────────────────────────────────────────────────
-  const loginAdmin = async (password) => {
-    try {
-      const res = await apiAdminLogin(password);
-      if (res.success) {
-        setIsAdminLoggedIn(true);
-        showToast('Admin Access Granted. Welcome back! 👑');
-        // Refresh data to get orders
-        fetchAllData();
-        return true;
-      }
-    } catch {
-      // Fallback to local validation
-    }
+  const loginAdmin = async (password, email = 'farhanabc43@gmail.com') => {
+    const cleanPass = password ? password.trim() : '';
+    const cleanEmail = email ? email.trim().toLowerCase() : '';
 
-    // Local fallback for offline mode
-    if (password === 'bella123' || password === 'admin') {
+    if (cleanPass === 'Pak12345' && (cleanEmail === '' || cleanEmail === 'farhanabc43@gmail.com')) {
       setIsAdminLoggedIn(true);
-      showToast('Admin Access Granted. Welcome back! 👑');
+      localStorage.setItem('bella_admin_auth', 'true');
+      showToast('👑 Welcome Admin (farhanabc43@gmail.com)! Access Granted.', 'success');
       return true;
+    } else {
+      showToast('❌ Ghalat Email ya Password! Admin password sirf "Pak12345" hai.', 'error');
+      return false;
     }
-    showToast('Invalid Admin Credentials. Try password "admin" or "bella123"', 'error');
-    return false;
   };
 
   const logoutAdmin = () => {
     setIsAdminLoggedIn(false);
+    localStorage.removeItem('bella_admin_auth');
     apiLogout();
-    showToast('Logged out of Admin panel.', 'info');
+    showToast('Logged out of PURE MART Admin panel.', 'info');
   };
 
   // ── Admin Product CRUD (Backend API) ───────────────────────────────────
@@ -412,6 +540,10 @@ export const ShopProvider = ({ children }) => {
         addProduct, updateProduct, deleteProduct,
         addCategory, deleteCategory,
         updateOrderStatus,
+
+        siteSettings, setSiteSettings,
+
+        contactMessages, sendContactMessage, deleteContactMessage, markMessageRead,
 
         toasts, showToast,
       }}

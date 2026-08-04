@@ -23,7 +23,8 @@ export const Navbar = () => {
     setSearchQuery,
     setSelectedCategory,
     products,
-    isAdminLoggedIn
+    isAdminLoggedIn,
+    siteSettings
   } = useShop();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -54,7 +55,7 @@ export const Navbar = () => {
       <div className="bg-linear-to-r from-pink-900 via-pink-700 to-pink-900 text-pink-50 text-xs py-2 px-4 text-center font-medium flex items-center justify-center space-x-2 shadow-inner">
         <Sparkles className="w-3.5 h-3.5 text-pink-300 animate-pulse" />
         <span>
-          Complimentary Luxury Packaging & Express Shipping on Orders Over $150 | Code:{' '}
+          Complimentary Luxury Packaging & Express Shipping on Orders Over PKR 150 | Code:{' '}
           <span className="font-bold underline decoration-pink-300">BELLA10</span> for 10% Off
         </span>
       </div>
@@ -80,8 +81,8 @@ export const Navbar = () => {
                 <Sparkles className="w-5 h-5" />
               </div>
               <div className="flex flex-col">
-                <span className="font-serif-luxury text-2xl font-bold tracking-widest text-slate-900 leading-none">
-                  BELLA
+                <span className="font-serif-luxury text-xl font-bold tracking-widest text-slate-900 leading-none">
+                  {siteSettings.websiteName}
                 </span>
                 <span className="text-[10px] tracking-[0.25em] text-pink-600 uppercase font-semibold mt-1">
                   Luxury Fashion
@@ -196,9 +197,9 @@ export const Navbar = () => {
                                 {prod.name}
                               </p>
                               <p className="text-[11px] text-pink-600 font-bold">
-                                ${prod.price}{' '}
+                                PKR {prod.price}{' '}
                                 <span className="line-through text-slate-400 text-[10px] font-normal ml-1">
-                                  ${prod.originalPrice}
+                                  PKR {prod.originalPrice}
                                 </span>
                               </p>
                             </div>

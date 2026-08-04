@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 export const Footer = () => {
-  const { navigateTo, setSelectedCategory } = useShop();
+  const { navigateTo, setSelectedCategory, siteSettings } = useShop();
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
@@ -45,8 +45,8 @@ export const Footer = () => {
                 <Sparkles className="w-5 h-5" />
               </div>
               <div className="flex flex-col">
-                <span className="font-serif-luxury text-2xl font-bold tracking-widest text-white leading-none">
-                  BELLA
+                <span className="font-serif-luxury text-xl font-bold tracking-widest text-white leading-none">
+                  {siteSettings.websiteName}
                 </span>
                 <span className="text-[10px] tracking-[0.25em] text-pink-400 uppercase font-semibold mt-1">
                   Luxury Fashion
@@ -197,15 +197,15 @@ export const Footer = () => {
             <div className="space-y-2 text-xs text-slate-400">
               <p className="flex items-start space-x-2">
                 <MapPin className="w-4 h-4 text-pink-500 shrink-0 mt-0.5" />
-                <span>Rodeo Drive, Beverly Hills, CA 90210</span>
+                <span>{siteSettings.address}</span>
               </p>
               <p className="flex items-center space-x-2">
                 <Phone className="w-4 h-4 text-pink-500 shrink-0" />
-                <span>+1 (800) 555-BELLA</span>
+                <span>{siteSettings.phone}</span>
               </p>
               <p className="flex items-center space-x-2">
                 <Mail className="w-4 h-4 text-pink-500 shrink-0" />
-                <span>support@bellastore.com</span>
+                <span>{siteSettings.email}</span>
               </p>
             </div>
           </div>
@@ -213,7 +213,7 @@ export const Footer = () => {
 
         {/* Bottom Copyright & Payment Methods */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} Bella Store. All Rights Reserved. Designed with luxury craftsmanship.</p>
+          <p>© {new Date().getFullYear()} {siteSettings.websiteName}. All Rights Reserved. Designed with luxury craftsmanship.</p>
 
           <div className="flex items-center space-x-2 text-[10px] font-bold text-slate-400">
             <span className="px-2 py-1 bg-slate-900 border border-slate-800 rounded">VISA</span>

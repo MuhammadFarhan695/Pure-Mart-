@@ -291,7 +291,7 @@ export const CheckoutPage = () => {
                     </p>
                   </div>
                   <span className="font-bold text-slate-900">
-                    ${(item.price * item.quantity).toFixed(2)}
+                    PKR {(item.price * item.quantity).toFixed(2)}
                   </span>
                 </div>
               ))}
@@ -301,26 +301,26 @@ export const CheckoutPage = () => {
             <div className="space-y-2 border-t border-slate-100 pt-4 text-xs text-slate-600">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span className="font-bold text-slate-800">${cartSubtotal.toFixed(2)}</span>
+                <span className="font-bold text-slate-800">PKR {cartSubtotal.toFixed(2)}</span>
               </div>
 
               {cartDiscount > 0 && (
                 <div className="flex justify-between text-emerald-600 font-semibold">
                   <span>Discount</span>
-                  <span>-${cartDiscount.toFixed(2)}</span>
+                  <span>-PKR {cartDiscount.toFixed(2)}</span>
                 </div>
               )}
 
               <div className="flex justify-between">
                 <span>Shipping</span>
                 <span className="font-bold text-slate-800">
-                  {shippingFee === 0 ? <strong className="text-emerald-600 uppercase">FREE</strong> : `$${shippingFee.toFixed(2)}`}
+                  {shippingFee === 0 ? <strong className="text-emerald-600 uppercase">FREE</strong> : `PKR ${shippingFee.toFixed(2)}`}
                 </span>
               </div>
 
               <div className="border-t border-slate-100 pt-3 flex justify-between text-lg font-bold text-slate-900">
                 <span>Total Due</span>
-                <span className="text-pink-600 text-2xl font-extrabold">${cartTotal.toFixed(2)}</span>
+                <span className="text-pink-600 text-2xl font-extrabold">PKR {cartTotal.toFixed(2)}</span>
               </div>
             </div>
 

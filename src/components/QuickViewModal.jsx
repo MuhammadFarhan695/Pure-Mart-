@@ -98,9 +98,9 @@ export const QuickViewModal = () => {
 
               {/* Pricing */}
               <div className="flex items-baseline space-x-3 mb-4">
-                <span className="text-3xl font-bold text-slate-900">${quickViewProduct.price}</span>
+                <span className="text-3xl font-bold text-slate-900">PKR {quickViewProduct.price}</span>
                 {quickViewProduct.originalPrice && (
-                  <span className="text-base text-slate-400 line-through">${quickViewProduct.originalPrice}</span>
+                  <span className="text-base text-slate-400 line-through">PKR {quickViewProduct.originalPrice}</span>
                 )}
                 {quickViewProduct.discountPercent && (
                   <span className="bg-pink-100 text-pink-700 text-xs font-bold px-2.5 py-0.5 rounded-full">

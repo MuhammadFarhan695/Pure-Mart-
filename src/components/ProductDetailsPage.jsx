@@ -156,13 +156,13 @@ export const ProductDetailsPage = () => {
 
           {/* Price Box */}
           <div className="bg-pink-50/50 rounded-2xl border border-pink-100 p-4 flex items-baseline space-x-4">
-            <span className="text-3xl font-bold text-slate-900">${product.price}</span>
+            <span className="text-3xl font-bold text-slate-900">PKR {product.price}</span>
             {product.originalPrice && (
-              <span className="text-lg text-slate-400 line-through">${product.originalPrice}</span>
+              <span className="text-lg text-slate-400 line-through">PKR {product.originalPrice}</span>
             )}
             {product.discountPercent > 0 && (
               <span className="bg-pink-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">
-                Save ${product.originalPrice - product.price}
+                Save PKR {product.originalPrice - product.price}
               </span>
             )}
           </div>
@@ -241,7 +241,7 @@ export const ProductDetailsPage = () => {
           <div className="grid grid-cols-3 gap-3 pt-6 border-t border-slate-100 text-center text-[11px] font-medium text-slate-600">
             <div className="flex flex-col items-center">
               <Truck className="w-5 h-5 text-pink-600 mb-1" />
-              <span>Free Shipping &gt;$150</span>
+              <span>Free Shipping &gt;PKR 150</span>
             </div>
             <div className="flex flex-col items-center">
               <ShieldCheck className="w-5 h-5 text-pink-600 mb-1" />

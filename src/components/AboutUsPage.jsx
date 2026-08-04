@@ -3,7 +3,7 @@ import { useShop } from '../context/ShopContext';
 import { Sparkles, Heart, Award, ShieldCheck, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 export const AboutUsPage = () => {
-  const { navigateTo } = useShop();
+  const { navigateTo, siteSettings } = useShop();
 
   return (
     <div className="space-y-16 pb-12">
@@ -18,7 +18,7 @@ export const AboutUsPage = () => {
             Crafting Elegance for the Modern Woman
           </h1>
           <p className="text-slate-600 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
-            Founded with a passion for timeless luxury and accessible glamour, Bella Store brings artisanal fashion accessories, jewelry, and leather goods directly to your doorstep.
+            Founded with a passion for timeless luxury and accessible glamour, {siteSettings.websiteName} brings artisanal fashion accessories, jewelry, and leather goods directly to your doorstep.
           </p>
         </div>
       </section>
@@ -36,13 +36,13 @@ export const AboutUsPage = () => {
 
           <div className="space-y-6">
             <span className="text-pink-600 text-xs font-bold uppercase tracking-widest">
-              The Bella Philosophy
+              The {siteSettings.websiteName} Philosophy
             </span>
             <h2 className="font-serif-luxury text-3xl font-bold text-slate-900">
               Uncompromising Quality Meets Accessible Luxury
             </h2>
             <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
-              At Bella Store, we believe that luxury is not defined by exorbitant price tags, but by exquisite craftsmanship, ethical materials, and attention to detail. Every handbag, piece of jewelry, and scarf is thoughtfully designed in our atelier to inspire confidence.
+              At {siteSettings.websiteName}, we believe that luxury is not defined by exorbitant price tags, but by exquisite craftsmanship, ethical materials, and attention to detail. Every handbag, piece of jewelry, and scarf is thoughtfully designed in our atelier to inspire confidence.
             </p>
 
             <div className="space-y-3 pt-2 text-xs sm:text-sm text-slate-800 font-semibold">

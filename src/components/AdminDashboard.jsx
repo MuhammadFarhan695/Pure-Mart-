@@ -17,7 +17,9 @@ import {
   RefreshCw,
   LogOut,
   ChevronRight,
-  Eye
+  Eye,
+  Mail,
+  MessageSquare
 } from 'lucide-react';
 
 export const AdminDashboard = () => {
@@ -35,9 +37,15 @@ export const AdminDashboard = () => {
     deleteCategory,
     updateOrderStatus,
     navigateTo,
-    showToast
+    showToast,
+    siteSettings,
+    setSiteSettings,
+    contactMessages,
+    deleteContactMessage,
+    markMessageRead
   } = useShop();
 
+  const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'products' | 'categories' | 'orders'
 
@@ -69,7 +77,7 @@ export const AdminDashboard = () => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    loginAdmin(loginPassword);
+    loginAdmin(loginPassword, loginEmail);
   };
 
   const handleOpenAddProduct = () => {
@@ -81,7 +89,7 @@ export const AdminDashboard = () => {
       originalPrice: '',
       stock: '15',
       sku: `BEL-PRD-${Math.floor(100 + Math.random() * 900)}`,
-      description: 'Handcrafted luxury design from the Bella Store collection.',
+      description: 'Handcrafted luxury design from the PURE MART collection.',
       image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=1000&q=80',
       isFeatured: false,
       isNew: true,
@@ -132,7 +140,7 @@ export const AdminDashboard = () => {
       ],
       features: [
         'Premium Atelier Handcrafted Quality',
-        'Includes Signature Bella Dust Bag'
+        'Includes Signature PURE MART Dust Bag'
       ]
     };
 
@@ -184,14 +192,29 @@ export const AdminDashboard = () => {
 
           <div>
             <h1 className="font-serif-luxury text-2xl font-bold text-slate-900">
-              Bella Store Admin Portal
+              {siteSettings.websiteName} Admin Portal
             </h1>
             <p className="text-xs text-slate-500 mt-1">
-              Enter admin password to manage products, categories, stock, and customer orders.
+              Enter admin email & password to manage products, categories, orders, and customer messages.
             </p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4 text-left">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Admin Email</label>
+              <div className="relative">
+                <input
+                  type="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="Enter admin email"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-pink-500 rounded-xl py-2.5 pl-10 pr-3 text-xs focus:outline-none"
+                  required
+                />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              </div>
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">Admin Password</label>
               <div className="relative">
@@ -199,7 +222,7 @@ export const AdminDashboard = () => {
                   type="password"
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
-                  placeholder="Enter 'admin' or 'bella123'"
+                  placeholder="Enter admin password"
                   className="w-full bg-slate-50 border border-slate-200 focus:border-pink-500 rounded-xl py-2.5 pl-10 pr-3 text-xs focus:outline-none"
                   required
                 />
@@ -214,10 +237,6 @@ export const AdminDashboard = () => {
               Sign In to Admin Panel
             </button>
           </form>
-
-          <div className="text-[11px] text-slate-400 bg-pink-50/70 p-3 rounded-xl border border-pink-100">
-            💡 Default Access Password: <strong className="text-pink-600">admin</strong> or <strong className="text-pink-600">bella123</strong>
-          </div>
         </div>
       </div>
     );
@@ -238,7 +257,7 @@ export const AdminDashboard = () => {
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="font-serif-luxury text-2xl font-bold">Bella Admin Control Center</h1>
+            <h1 className="font-serif-luxury text-2xl font-bold">{siteSettings.websiteName} Admin Control Center</h1>
             <p className="text-xs text-pink-300">Live Inventory & Order Management</p>
           </div>
         </div>
@@ -298,6 +317,33 @@ export const AdminDashboard = () => {
           <Users className="w-4 h-4" />
           <span>Customer Orders ({orders.length})</span>
         </button>
+        <button
+          onClick={() => setActiveTab('settings')}
+          className={`px-5 py-2.5 rounded-2xl font-bold text-xs transition flex items-center space-x-2 shrink-0 ${
+            activeTab === 'settings'
+              ? 'bg-pink-600 text-white shadow-md'
+              : 'bg-white text-slate-600 hover:bg-pink-50'
+          }`}
+        >
+          <Edit3 className="w-4 h-4" />
+          <span>Site Settings</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('messages')}
+          className={`px-5 py-2.5 rounded-2xl font-bold text-xs transition flex items-center space-x-2 shrink-0 ${
+            activeTab === 'messages'
+              ? 'bg-pink-600 text-white shadow-md'
+              : 'bg-white text-slate-600 hover:bg-pink-50'
+          }`}
+        >
+          <Mail className="w-4 h-4" />
+          <span>Contact Messages ({contactMessages ? contactMessages.length : 0})</span>
+          {contactMessages && contactMessages.filter(m => m.status === 'Unread').length > 0 && (
+            <span className="bg-amber-400 text-slate-900 text-[10px] px-2 py-0.5 rounded-full font-extrabold">
+              {contactMessages.filter(m => m.status === 'Unread').length} New
+            </span>
+          )}
+        </button>
       </div>
 
       {/* TAB 1: DASHBOARD OVERVIEW */}
@@ -309,7 +355,7 @@ export const AdminDashboard = () => {
               <div>
                 <p className="text-xs font-bold uppercase text-slate-400">Total Store Revenue</p>
                 <h3 className="font-serif-luxury text-2xl font-bold text-slate-900 mt-1">
-                  ${totalRevenue.toFixed(2)}
+                  PKR {totalRevenue.toFixed(2)}
                 </h3>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
@@ -381,7 +427,7 @@ export const AdminDashboard = () => {
                       <p className="text-slate-400 text-[11px]">{ord.date} • {ord.items.length} items</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-pink-600">${ord.total.toFixed(2)}</p>
+                      <p className="font-bold text-pink-600">PKR {ord.total.toFixed(2)}</p>
                       <span className="text-[10px] bg-pink-100 text-pink-800 font-bold px-2 py-0.5 rounded-full">
                         {ord.status}
                       </span>
@@ -410,6 +456,13 @@ export const AdminDashboard = () => {
                 >
                   <ShoppingBag className="w-4 h-4" />
                   <span>Add Category</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('messages')}
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold p-3 rounded-2xl text-xs flex items-center justify-center space-x-2 transition"
+                >
+                  <Mail className="w-4 h-4 text-pink-400" />
+                  <span>View Customer Messages ({contactMessages ? contactMessages.length : 0})</span>
                 </button>
                 <button
                   onClick={() => navigateTo('shop')}
@@ -450,7 +503,7 @@ export const AdminDashboard = () => {
                 <tr>
                   <th className="p-3">Product</th>
                   <th className="p-3">Category</th>
-                  <th className="p-3">Price ($)</th>
+                  <th className="p-3">Price (PKR)</th>
                   <th className="p-3">Stock Qty</th>
                   <th className="p-3">Badges</th>
                   <th className="p-3 text-right">Actions</th>
@@ -649,7 +702,7 @@ export const AdminDashboard = () => {
                     </td>
                     <td className="p-3 text-slate-600">{ord.date}</td>
                     <td className="p-3 font-semibold text-slate-700">{ord.paymentMethod}</td>
-                    <td className="p-3 font-bold text-slate-900">${ord.total.toFixed(2)}</td>
+                    <td className="p-3 font-bold text-slate-900">PKR {ord.total.toFixed(2)}</td>
 
                     <td className="p-3">
                       <select
@@ -677,6 +730,173 @@ export const AdminDashboard = () => {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* TAB 5: SETTINGS */}
+      {activeTab === 'settings' && (
+        <div className="bg-white rounded-3xl border border-pink-100 p-6 shadow-sm space-y-6">
+          <h2 className="font-serif-luxury text-2xl font-bold text-slate-900 border-b border-slate-100 pb-3">
+            Website Configuration
+          </h2>
+          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); showToast('Settings Updated!'); }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Website Name</label>
+                <input
+                  type="text"
+                  value={siteSettings.websiteName}
+                  onChange={(e) => setSiteSettings({ ...siteSettings, websiteName: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-pink-500 rounded-xl p-2.5 text-xs focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Business Name</label>
+                <input
+                  type="text"
+                  value={siteSettings.businessName}
+                  onChange={(e) => setSiteSettings({ ...siteSettings, businessName: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-pink-500 rounded-xl p-2.5 text-xs focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Owner Name</label>
+                <input
+                  type="text"
+                  value={siteSettings.ownerName}
+                  onChange={(e) => setSiteSettings({ ...siteSettings, ownerName: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-pink-500 rounded-xl p-2.5 text-xs focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
+                <input
+                  type="email"
+                  value={siteSettings.email}
+                  onChange={(e) => setSiteSettings({ ...siteSettings, email: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-pink-500 rounded-xl p-2.5 text-xs focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Phone Number</label>
+                <input
+                  type="text"
+                  value={siteSettings.phone}
+                  onChange={(e) => setSiteSettings({ ...siteSettings, phone: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-pink-500 rounded-xl p-2.5 text-xs focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Address</label>
+                <input
+                  type="text"
+                  value={siteSettings.address}
+                  onChange={(e) => setSiteSettings({ ...siteSettings, address: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-pink-500 rounded-xl p-2.5 text-xs focus:outline-none"
+                />
+              </div>
+            </div>
+            <button type="submit" className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 px-6 rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-pink-200 transition">Save Settings</button>
+          </form>
+        </div>
+      )}
+
+      {/* TAB 6: CUSTOMER MESSAGES */}
+      {activeTab === 'messages' && (
+        <div className="bg-white rounded-3xl border border-pink-100 p-6 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <div>
+              <h2 className="font-serif-luxury text-2xl font-bold text-slate-900">
+                Customer Contact Messages ({contactMessages ? contactMessages.length : 0})
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Messages submitted from the website Contact Us page. Delivered to <strong className="text-pink-600 font-bold">farhanabc43@gmail.com</strong>
+              </p>
+            </div>
+          </div>
+
+          {!contactMessages || contactMessages.length === 0 ? (
+            <div className="text-center py-12 bg-slate-50 rounded-2xl border border-slate-200">
+              <Mail className="w-12 h-12 text-slate-300 mx-auto mb-2" />
+              <h3 className="font-bold text-slate-700 text-sm">No Messages Yet</h3>
+              <p className="text-xs text-slate-400">When customers submit messages on the Contact page, they will appear here.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {contactMessages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`p-5 rounded-2xl border transition ${
+                    msg.status === 'Unread'
+                      ? 'bg-pink-50/60 border-pink-200 shadow-sm'
+                      : 'bg-white border-slate-200'
+                  }`}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${
+                        msg.status === 'Unread' ? 'bg-pink-600 text-white' : 'bg-slate-200 text-slate-700'
+                      }`}>
+                        {msg.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                          {msg.name}
+                          {msg.status === 'Unread' && (
+                            <span className="bg-pink-600 text-white text-[10px] px-2 py-0.5 rounded-full font-extrabold uppercase">
+                              New Message
+                            </span>
+                          )}
+                        </h4>
+                        <p className="text-xs text-slate-500">
+                          <a href={`mailto:${msg.email}`} className="text-pink-600 hover:underline font-medium">
+                            {msg.email}
+                          </a>
+                          {msg.phone && <span className="ml-2">| 📞 {msg.phone}</span>}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right text-xs text-slate-400">
+                      <p className="font-medium text-slate-500">{msg.date}</p>
+                      <p className="text-[10px] text-pink-500 font-semibold">{msg.id}</p>
+                    </div>
+                  </div>
+
+                  <div className="py-3">
+                    <p className="font-bold text-xs text-slate-800 mb-1">Subject: {msg.subject}</p>
+                    <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 whitespace-pre-wrap leading-relaxed">
+                      "{msg.message}"
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-end space-x-3 pt-2">
+                    {msg.status === 'Unread' && (
+                      <button
+                        onClick={() => markMessageRead(msg.id)}
+                        className="text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl transition"
+                      >
+                        Mark as Read
+                      </button>
+                    )}
+                    <a
+                      href={`mailto:${msg.email}?subject=Re: ${encodeURIComponent(msg.subject)}&body=Hello ${encodeURIComponent(msg.name)},\n\nThank you for contacting PURE MART.`}
+                      className="text-xs font-bold text-white bg-pink-600 hover:bg-pink-700 px-3.5 py-1.5 rounded-xl transition shadow-xs flex items-center space-x-1"
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                      <span>Reply via Email</span>
+                    </a>
+                    <button
+                      onClick={() => deleteContactMessage(msg.id)}
+                      className="text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-xl transition flex items-center space-x-1"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -728,7 +948,7 @@ export const AdminDashboard = () => {
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Price ($)</label>
+                  <label className="block font-bold text-slate-700 mb-1">Price (PKR)</label>
                   <input
                     type="number"
                     required
@@ -739,7 +959,7 @@ export const AdminDashboard = () => {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Original Price ($)</label>
+                  <label className="block font-bold text-slate-700 mb-1">Original Price (PKR)</label>
                   <input
                     type="number"
                     value={productForm.originalPrice}

@@ -3,22 +3,24 @@ import { useShop } from '../context/ShopContext';
 import { Mail, Phone, MapPin, Clock, Send, MessageCircle, ChevronDown, CheckCircle2 } from 'lucide-react';
 
 export const ContactUsPage = () => {
-  const { showToast } = useShop();
+  const { showToast, siteSettings, sendContactMessage } = useShop();
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [openFaq, setOpenFaq] = useState(0);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSending(true);
+    await sendContactMessage(formData);
+    setIsSending(false);
     setSubmitted(true);
-    showToast('✨ Message sent successfully! Our fashion concierge will reply within 2 hours.');
-    setFormData({ name: '', email: '', subject: '', message: '' });
   };
 
   const faqs = [
     {
       q: 'How long does shipping take?',
-      a: 'We offer Express 2-3 business day shipping across North America and standard international shipping (5-7 days). Orders over $150 receive free express shipping.'
+      a: 'We offer Express 2-3 business day shipping across Pakistan and standard international shipping (5-7 days). Orders over PKR 5,000 receive free express shipping.'
     },
     {
       q: 'What is your return & exchange policy?',
@@ -30,7 +32,7 @@ export const ContactUsPage = () => {
     },
     {
       q: 'How do I care for my 18k gold-dipped jewelry?',
-      a: 'Keep jewelry away from harsh chemicals, perfumes, and water. Store in your Bella Store velvet pouch when not in use.'
+      a: 'Keep jewelry away from harsh chemicals, perfumes, and water. Store in your PURE MART velvet pouch when not in use.'
     }
   ];
 
@@ -42,7 +44,7 @@ export const ContactUsPage = () => {
           We'd Love To Hear From You
         </span>
         <h1 className="font-serif-luxury text-3xl sm:text-4xl font-bold text-slate-900">
-          Contact Bella Atelier
+          Contact {siteSettings.websiteName}
         </h1>
         <p className="text-slate-500 text-xs sm:text-sm">
           Have questions about sizing, styling advice, or an existing order? Our team is available 24/7.
@@ -59,8 +61,7 @@ export const ContactUsPage = () => {
             </div>
             <div>
               <h3 className="font-serif-luxury text-base font-bold text-slate-900">Flagship Boutique</h3>
-              <p className="text-xs text-slate-500 mt-1">742 Evergreen Terrace, Rodeo Drive</p>
-              <p className="text-xs text-slate-500">Beverly Hills, CA 90210</p>
+              <p className="text-xs text-slate-500 mt-1">{siteSettings.address}</p>
             </div>
           </div>
 
@@ -70,7 +71,7 @@ export const ContactUsPage = () => {
             </div>
             <div>
               <h3 className="font-serif-luxury text-base font-bold text-slate-900">Phone Support</h3>
-              <p className="text-xs text-slate-500 mt-1">+1 (800) 555-BELLA (23552)</p>
+              <p className="text-xs text-slate-500 mt-1">{siteSettings.phone}</p>
               <p className="text-xs font-semibold text-pink-600">Toll-Free 24/7 Assistance</p>
             </div>
           </div>
@@ -81,8 +82,8 @@ export const ContactUsPage = () => {
             </div>
             <div>
               <h3 className="font-serif-luxury text-base font-bold text-slate-900">Email Concierge</h3>
-              <p className="text-xs text-slate-500 mt-1">support@bellastore.com</p>
-              <p className="text-xs text-slate-500">VIP Styling: vip@bellastore.com</p>
+              <p className="text-xs text-slate-500 mt-1">{siteSettings.email}</p>
+              <p className="text-xs text-slate-500">VIP Styling: {siteSettings.email}</p>
             </div>
           </div>
         </div>
@@ -94,18 +95,32 @@ export const ContactUsPage = () => {
           </h2>
 
           {submitted ? (
-            <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-6 rounded-2xl text-center space-y-2">
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-6 rounded-2xl text-center space-y-3">
               <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
-              <h3 className="font-serif-luxury text-lg font-bold">Message Received!</h3>
-              <p className="text-xs">
-                Thank you for contacting Bella Atelier. A senior fashion consultant will get back to you shortly.
+              <h3 className="font-serif-luxury text-lg font-bold">Message Delivered!</h3>
+              <p className="text-xs text-slate-600">
+                Thank you for contacting {siteSettings.websiteName}. Your message has been saved in the Admin Panel and dispatched to <strong className="text-emerald-700 font-bold">farhanabc43@gmail.com</strong>.
               </p>
-              <button
-                onClick={() => setSubmitted(false)}
-                className="text-xs font-bold text-pink-600 underline pt-2"
-              >
-                Send another message
-              </button>
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <a
+                  href={`mailto:farhanabc43@gmail.com?subject=PURE MART: ${encodeURIComponent(formData.subject || 'General Inquiry')}&body=Name: ${encodeURIComponent(formData.name)}\nEmail: ${encodeURIComponent(formData.email)}\n\nMessage:\n${encodeURIComponent(formData.message)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="bg-pink-600 hover:bg-pink-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs flex items-center space-x-1.5 transition shadow-sm"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  <span>Open Email App to Send Direct Email</span>
+                </a>
+                <button
+                  onClick={() => {
+                    setSubmitted(false);
+                    setFormData({ name: '', email: '', subject: '', message: '' });
+                  }}
+                  className="text-xs font-bold text-slate-600 hover:text-slate-900 underline"
+                >
+                  Send another message
+                </button>
+              </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -122,7 +137,7 @@ export const ContactUsPage = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Your Email</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
                   <input
                     type="email"
                     required
@@ -141,7 +156,7 @@ export const ContactUsPage = () => {
                   required
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  placeholder="Order inquiry, sizing help..."
+                  placeholder="Order inquiry, product availability..."
                   className="w-full bg-slate-50 border border-slate-200 focus:border-pink-500 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none"
                 />
               </div>
@@ -160,10 +175,11 @@ export const ContactUsPage = () => {
 
               <button
                 type="submit"
-                className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3.5 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-pink-200 transition flex items-center justify-center space-x-2"
+                disabled={isSending}
+                className="w-full bg-pink-600 hover:bg-pink-700 disabled:opacity-60 text-white font-bold py-3.5 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-pink-200 transition flex items-center justify-center space-x-2"
               >
                 <Send className="w-4 h-4" />
-                <span>Send Concierge Message</span>
+                <span>{isSending ? 'Sending to farhanabc43@gmail.com...' : 'Send Message to Email & Admin'}</span>
               </button>
             </form>
           )}

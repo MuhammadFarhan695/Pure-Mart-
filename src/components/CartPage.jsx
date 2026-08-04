@@ -83,7 +83,7 @@ export const CartPage = () => {
             <Truck className="w-4 h-4 text-pink-600" />
             {amountLeftForFreeShipping > 0 ? (
               <span>
-                Add <strong className="text-pink-600">${amountLeftForFreeShipping.toFixed(2)}</strong> more for FREE Express Shipping!
+                Add <strong className="text-pink-600">PKR {amountLeftForFreeShipping.toFixed(2)}</strong> more for FREE Express Shipping!
               </span>
             ) : (
               <span className="text-emerald-700 font-bold flex items-center space-x-1">
@@ -130,10 +130,10 @@ export const CartPage = () => {
                       Color: {item.selectedColor}
                     </p>
                     <p className="text-xs font-bold text-slate-800 mt-1">
-                      ${item.price}
+                      PKR {item.price}
                       {item.originalPrice && (
                         <span className="text-slate-400 line-through text-[11px] font-normal ml-2">
-                          ${item.originalPrice}
+                          PKR {item.originalPrice}
                         </span>
                       )}
                     </p>
@@ -162,8 +162,8 @@ export const CartPage = () => {
                   </div>
 
                   {/* Total per Item */}
-                  <span className="text-sm font-bold text-slate-900 w-16 text-right">
-                    ${(item.price * item.quantity).toFixed(2)}
+                  <span className="text-sm font-bold text-slate-900 w-20 text-right">
+                    PKR {(item.price * item.quantity).toFixed(2)}
                   </span>
 
                   {/* Delete Button */}
@@ -246,26 +246,26 @@ export const CartPage = () => {
             <div className="space-y-2.5 text-xs text-slate-600">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span className="font-bold text-slate-800">${cartSubtotal.toFixed(2)}</span>
+                <span className="font-bold text-slate-800">PKR {cartSubtotal.toFixed(2)}</span>
               </div>
 
               {cartDiscount > 0 && (
                 <div className="flex justify-between text-emerald-600 font-semibold">
                   <span>Promo Discount ({couponCode})</span>
-                  <span>-${cartDiscount.toFixed(2)}</span>
+                  <span>-PKR {cartDiscount.toFixed(2)}</span>
                 </div>
               )}
 
               <div className="flex justify-between">
                 <span>Estimated Shipping</span>
                 <span className="font-bold text-slate-800">
-                  {shippingFee === 0 ? <strong className="text-emerald-600 uppercase">FREE</strong> : `$${shippingFee.toFixed(2)}`}
+                  {shippingFee === 0 ? <strong className="text-emerald-600 uppercase">FREE</strong> : `PKR ${shippingFee.toFixed(2)}`}
                 </span>
               </div>
 
               <div className="border-t border-slate-100 pt-3 flex justify-between text-base font-bold text-slate-900">
                 <span>Total Amount</span>
-                <span className="text-pink-600 text-xl font-extrabold">${cartTotal.toFixed(2)}</span>
+                <span className="text-pink-600 text-xl font-extrabold">PKR {cartTotal.toFixed(2)}</span>
               </div>
             </div>
 
